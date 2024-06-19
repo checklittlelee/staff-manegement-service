@@ -43,8 +43,8 @@ const userSchema = mongoose.Schema({
   remark: String,
 })
 
-module.exports = mongoose.model("users", userSchema, "users")
-// 创建一个名为“users”的Mongoose模型，基于userSchema，第三个参数“users”指定MongoDB中集合的名字
+module.exports = mongoose.model("user", userSchema, "user")
+// 创建一个名为“user”的Mongoose模型，基于userSchema，第三个参数“user”指定MongoDB中集合的名字
 
 /**
  * 定义数据结构：明确了每个用户文档应该包含哪些字段以及字段的类型。

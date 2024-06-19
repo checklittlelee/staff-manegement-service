@@ -4,9 +4,10 @@ const jwt = require("jsonwebtoken") // 引入jsonwebtoken模块，用于生成JW
 const md5 = require("md5") // 引入md5模块，用于加密密码
 
 const User = require("../models/userSchema") // 引入用户模型
+const Menu = require("../models/menuSchema") // 引入菜单模型
 const Counter = require("../models/counterSchema")
 
-router.prefix("/users") // 设置路由前缀为/users
+router.prefix("/user") // 设置路由前缀为/user
 
 /**
  * 登录
@@ -169,4 +170,57 @@ router.post("/operate", async (ctx) => {
   }
 })
 
+router.get("/all/list", async (ctx) => {
+  try {
+    const list = await User.find({}, "userId userName userEmail")
+    ctx.body = util.success(list)
+  } catch (error) {
+    ctx.body = util.fail(error.stack)
+  }
+})
+
+router.get("/getPremissionList", async (ctx) => {
+  let authorization = ctx.request.headers.authorization
+  let { data } = util.decoded(authorization)
+  let menuList = await getMenuList(data.role, data.roleList)
+  let actionList = getActionList(JSON.parse(JSON.stringify(menuList)))
+  ctx.body = util.success({ menuList, actionList })
+})
+
+async function getMenuList(userRole, roleKeys) {
+  let rootList = []
+  if (userRole == 0) {
+    rootList = (await Menu.find({})) || []
+  } else {
+    let roleList = await Role.find({ _id: { $in: roleKeys } })
+    let permissionList = []
+    roleList.map((role) => {
+      let { checkedKeys, halfCheckedKeys } = role.permissionList
+      permissionList = permissionList.concat(...checkedKeys, ...halfCheckedKeys)
+    })
+    permissionList = [...new Set(permissionList)]
+    rootList = await Menu.find({ _id: { $in: permissionList } })
+  }
+  return util.getTree(rootList, null, [])
+}
+
+function getActionList(list) {
+  const actionList = []
+  const deep = (arr) => {
+    while (arr.length) {
+      let item = arr.pop()
+      if (item.action) {
+        item.action.map((action) => {
+          actionList.push(action.menuCode)
+        })
+      }
+      if (item.children && !item.action) {
+        deep(item.children)
+      }
+    }
+  }
+  deep(list)
+
+  return actionList
+}
 module.exports = router

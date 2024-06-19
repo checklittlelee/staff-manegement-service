@@ -12,7 +12,8 @@ const cors = require("@koa/cors")
 const util = require("./utils/util")
 const { verToken } = require("./utils/tokenVerify")
 
-const users = require("./routes/users") // 引入路由
+const user = require("./routes/user") // 引入路由
+const menu = require("./routes/menu") // 引入路由
 
 require("./config/db") // mongodb连接配置
 
@@ -82,13 +83,14 @@ app.use(
 // JWT身份验证中间件：使用中间件 + 配置密钥secret + 定义不需要进行JWT验证的路径
 app.use(
   koajwt({ secret: "jason" }).unless({
-    path: [/^\/api\/users\/login/],
+    path: [/^\/api\/user\/login/],
   }),
 )
 
 // 路由配置
 router.prefix("/api") // 设置全局路由前缀为 /api（这一行必须写最前面，后续定义的所有路由都会自动带上这个前缀）
-router.use(users.routes(), users.allowedMethods()) // 使用用户路由中间件
+router.use(user.routes(), user.allowedMethods()) // 使用用户路由中间件
+router.use(menu.routes(), menu.allowedMethods()) // 使用菜单路由中间件
 app.use(router.routes(), router.allowedMethods()) // 使用路由中间件（这一行必须在所有路由和中间件定义之后调用）
 
 // 错误配置

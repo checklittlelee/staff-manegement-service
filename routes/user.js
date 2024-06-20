@@ -5,7 +5,8 @@ const md5 = require("md5") // 引入md5模块，用于加密密码
 
 const User = require("../models/userSchema") // 引入用户模型
 const Menu = require("../models/menuSchema") // 引入菜单模型
-const Counter = require("../models/counterSchema")
+const Role = require("../models/roleSchema") // 引入角色模型
+const Counter = require("../models/counterSchema") // 引入消息模块
 
 router.prefix("/user") // 设置路由前缀为/user
 

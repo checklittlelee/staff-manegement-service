@@ -16,6 +16,7 @@ const user = require("./routes/user") // 引入路由
 const menu = require("./routes/menu") // 引入路由
 const role = require("./routes/role") // 引入路由
 const dept = require("./routes/dept") // 引入路由
+const leave = require("./routes/leave") // 引入路由
 
 require("./config/db") // mongodb连接配置
 
@@ -95,6 +96,7 @@ router.use(user.routes(), user.allowedMethods()) // 使用用户路由中间件
 router.use(menu.routes(), menu.allowedMethods()) // 使用菜单路由中间件
 router.use(role.routes(), role.allowedMethods()) // 使用角色路由中间件
 router.use(dept.routes(), dept.allowedMethods()) // 使用部门路由中间件
+router.use(leave.routes(), leave.allowedMethods()) // 使用审批路由中间件
 app.use(router.routes(), router.allowedMethods()) // 使用路由中间件（这一行必须在所有路由和中间件定义之后调用）
 
 // 错误配置

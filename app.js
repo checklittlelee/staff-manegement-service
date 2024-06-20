@@ -14,6 +14,7 @@ const { verToken } = require("./utils/tokenVerify")
 
 const user = require("./routes/user") // 引入路由
 const menu = require("./routes/menu") // 引入路由
+const role = require("./routes/role") // 引入路由
 
 require("./config/db") // mongodb连接配置
 
@@ -91,6 +92,7 @@ app.use(
 router.prefix("/api") // 设置全局路由前缀为 /api（这一行必须写最前面，后续定义的所有路由都会自动带上这个前缀）
 router.use(user.routes(), user.allowedMethods()) // 使用用户路由中间件
 router.use(menu.routes(), menu.allowedMethods()) // 使用菜单路由中间件
+router.use(role.routes(), role.allowedMethods()) // 使用角色路由中间件
 app.use(router.routes(), router.allowedMethods()) // 使用路由中间件（这一行必须在所有路由和中间件定义之后调用）
 
 // 错误配置

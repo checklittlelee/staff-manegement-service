@@ -106,8 +106,9 @@ router.post("/delete", async (ctx) => {
   // 获取要删除的用户ID列表
   const { userIds } = ctx.request.body
   // 将对应用户的状态更新为“离职”（状态2）
+  // updateMany：第一个参数是查询条件；第二个参数是更新操作，表示将符合条件的所有用户的state字段更新为2
   const res = await User.updateMany({ userId: { $in: userIds } }, { state: 2 })
-  // 返回删除结果
+  // 返回删除结果。modifiedCount表示被更新的文档数量
   if (res.modifiedCount) {
     ctx.body = util.success(res, `共删除成功${res.modifiedCount}条`)
     return
@@ -132,13 +133,12 @@ router.post("/operate", async (ctx) => {
   } = ctx.request.body
 
   if (action == "add") {
-    // 添加操作的逻辑
+    // 第一步：判断前端信息是否填完整了：用户名称、邮箱、部门是必填
     if (!userName || !userEmail || !deptId) {
       ctx.body = util.fail("参数错误", util.CODE.PARAM_ERROR)
       return
     }
-
-    // 检查用户名和邮箱是否重复，若不重复则创建新用户
+    // 第二部：检查用户名和邮箱是否重复，若不重复则创建新用户
     const res = await User.findOne(
       { $or: [{ userName }, { userEmail }] },
       "_id userName userEmail",
@@ -148,11 +148,16 @@ router.post("/operate", async (ctx) => {
         `监测到有重复的用户 , 信息如下：${res.userName} - ${res.userEmail}`,
       )
     } else {
+      // 在数据库中添加新用户的逻辑
       try {
+        // findOneAndUpdate：第一个参数是查询条件；第二个参数是更新操作，$inc表示对文档中的数值字段进行增量更新；第三个参数为可选参数，指定更新的额外选项，这里默认是{new: true, upsert: true}，表示返回更新后的文档，如果没有找到匹配的文档，则创建一个新的文档
+        // 在这里{ $inc: { sequence_value: 1 } }表示字段增加1
+        // 具体执行步骤：在MongoDB的counter里找到_id为userId的文档，将sequence_value增加1，将更新后的文档返回给doc
         const doc = await Counter.findOneAndUpdate(
           { _id: "userId" },
           { $inc: { sequence_value: 1 } },
         )
+        // 使用模型创建新的用户文档
         const user = new User({
           userId: doc.sequence_value,
           userName,
@@ -165,6 +170,7 @@ router.post("/operate", async (ctx) => {
           deptId,
           mobile,
         })
+        // 调用 .save() 方法将用户实例保存到MongoDB数据库中，save 是一个异步方法，它会返回一个 Promise，表示保存操作的完成情况
         user.save()
         ctx.body = util.success({}, "用户创建成功")
       } catch (error) {
@@ -172,7 +178,7 @@ router.post("/operate", async (ctx) => {
       }
     }
   } else {
-    // 编辑操作的逻辑
+    // 编辑操作的逻辑：编辑用户时，用户名和邮箱是不能修改的，部门允许改动
     if (!deptId) {
       ctx.body = util.fail("部门不能为空", util.CODE.PARAM_ERROR)
       return
@@ -199,6 +205,8 @@ router.get("/all/list", async (ctx) => {
     const list = await User.find({}, "userId userName userEmail")
     ctx.body = util.success(list)
   } catch (error) {
+    // error.stack 是指 JavaScript 中的错误对象的堆栈跟踪信息（stack trace）
+    // stack：堆栈跟踪信息，显示错误发生时的调用堆栈，可以帮助定位代码中的错误
     ctx.body = util.fail(error.stack)
   }
 })
@@ -206,31 +214,42 @@ router.get("/all/list", async (ctx) => {
 /**
  * 获取权限列表：解析JWT令牌获取用户角色信息；根据用户角色获取对应的菜单列表和操作列表；返回菜单列表和操作列表
  */
-router.get("/getPremissionList", async (ctx) => {
+router.get("/getPermissionList", async (ctx) => {
+  // 取到请求头里的Authorization
   let authorization = ctx.request.headers.authorization
+  // 通过jwt.verify返回负载payload
   let { data } = util.decoded(authorization)
   let menuList = await getMenuList(data.role, data.roleList)
+  // 深拷贝menuList，提取出action，存储到actionList里
   let actionList = getActionList(JSON.parse(JSON.stringify(menuList)))
   ctx.body = util.success({ menuList, actionList })
 })
 async function getMenuList(userRole, roleKeys) {
+  // 初始化数组：存储最终的菜单列表
   let rootList = []
+  // 如果是管理员，直接从数据库中获取所有菜单
   if (userRole == 0) {
     rootList = (await Menu.find({})) || []
   } else {
+    // eg. 前端组长、前端开发
     let roleList = await Role.find({ _id: { $in: roleKeys } })
+    // 初始化数组：存储所拥有的角色的所有权限
     let permissionList = []
     roleList.map((role) => {
       let { checkedKeys, halfCheckedKeys } = role.permissionList
       permissionList = permissionList.concat(...checkedKeys, ...halfCheckedKeys)
     })
+    // 去重：permissionList里面的元素是menu中的_id
     permissionList = [...new Set(permissionList)]
+    // 再根据权限列表permissionList查找对应的菜单项，存储到rootList
     rootList = await Menu.find({ _id: { $in: permissionList } })
   }
+  // 转换为树形结构
   return util.getTree(rootList, null, [])
 }
 function getActionList(list) {
   const actionList = []
+  // 深度遍历函数
   const deep = (arr) => {
     while (arr.length) {
       let item = arr.pop()

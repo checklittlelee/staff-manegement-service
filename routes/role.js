@@ -8,7 +8,7 @@ const Role = require("../models/roleSchema") // 引入角色模型
 router.prefix("/role")
 
 /**
- * 获取角色名称列表
+ * 获取角色名称列表：创建用户时，需要设置对应角色
  */
 router.get("/allList", async (ctx) => {
   try {

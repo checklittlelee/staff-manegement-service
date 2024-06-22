@@ -6,7 +6,7 @@ const Dept = require("../models/deptSchema")
 router.prefix("/dept")
 
 /**
- * 部门列表查询
+ * 获取部门列表
  */
 router.get("/list", async (ctx) => {
   const { deptName } = ctx.request.query
@@ -17,14 +17,11 @@ router.get("/list", async (ctx) => {
   if (deptName) {
     ctx.body = util.success(rootList)
   } else {
-    const permissionList = getTreeDept(rootList, null, [])
-    ctx.body = util.success(permissionList)
+    const deptList = getTreeDept(rootList, null, [])
+    ctx.body = util.success(deptList)
   }
 })
-
-/**
- * 递归拼接树形列表
- */
+// 递归拼接树形列表
 function getTreeDept(rootList, id, list) {
   for (let i = 0; i < rootList.length; i++) {
     let item = rootList[i]

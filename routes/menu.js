@@ -6,28 +6,31 @@ const Menu = require("../models/menuSchema") // 引入菜单模型
 router.prefix("/menu") // 设置路由前缀为/menu
 
 /**
- * 菜单列表查询
+ * 获取菜单列表
  */
 router.get("/list", async (ctx) => {
+  // 获取查询参数
   const { menuName, menuState } = ctx.request.query
+  // 构建查询条件
   const params = {}
   if (menuName) params.menuName = menuName
   if (menuState) params.menuState = menuState
+  // 从数据库中查找符合条件的菜单项
   let rootList = (await Menu.find(params)) || []
-  const permissionList = getTreeMenu(rootList, null, [], params.menuName)
-  ctx.body = util.success(permissionList)
+  // 转化为树形结构
+  const menuList = getTreeMenu(rootList, null, [], params.menuName)
+  ctx.body = util.success(menuList)
 })
-
-/**
- * 递归拼接树形列表
- */
+// 递归拼接树形列表
 function getTreeMenu(rootList, id, list, menuName = null) {
+  // 遍历跟列表
   for (let i = 0; i < rootList.length; i++) {
     let item = rootList[i]
     if (String(item.parentId.slice().pop()) == String(id) || menuName) {
       list.push(item._doc)
     }
   }
+  // 处理子节点
   list.map((item) => {
     item.children = []
     getTreeMenu(rootList, item._id, item.children)
@@ -54,7 +57,6 @@ router.post("/operate", async (ctx) => {
       info = "创建成功"
     } else if (action == "edit") {
       params.updateTime = new Date()
-      // console.log(_id);
       await Menu.findByIdAndUpdate(_id, params)
       info = "编辑成功"
     } else {

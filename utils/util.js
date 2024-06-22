@@ -61,6 +61,8 @@ module.exports = {
   decoded(authorization) {
     if (authorization) {
       let token = authorization.split(" ")[1]
+      // 验证成功：返回解码后的 payload 对象，这个对象包含了 JWT 中编码的所有声明
+      // 验证失败：抛出一个错误。例如，如果 token 已过期或者签名不正确，jwt.verify 将会抛出一个错误
       return jwt.verify(token, "jason")
     }
     return ""

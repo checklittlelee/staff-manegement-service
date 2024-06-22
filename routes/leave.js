@@ -51,7 +51,7 @@ router.get("/list", async (ctx) => {
 })
 
 /**
- *
+ * 获取待审批通知数量
  */
 router.get("/count", async (ctx) => {
   const token = ctx.request.headers.authorization.split(" ")[1]
@@ -65,7 +65,7 @@ router.get("/count", async (ctx) => {
 })
 
 /**
- *
+ * 创建申请单
  */
 router.post("/operate", async (ctx) => {
   const { _id, action, ...params } = ctx.request.body
@@ -130,7 +130,7 @@ router.post("/operate", async (ctx) => {
 })
 
 /**
- *
+ * 审核
  */
 router.post("/approve", async (ctx) => {
   const { action, remark, _id } = ctx.request.body
